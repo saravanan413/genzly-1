@@ -24,6 +24,11 @@ import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import LikedPosts from "./pages/LikedPosts";
 import LanguageSettings from "./pages/LanguageSettings";
+// Import new settings sub-pages
+import LikedPostsReels from "./pages/LikedPostsReels";
+import Archive from "./pages/Archive";
+import BlockedUsers from "./pages/BlockedUsers";
+import MyStories from "./pages/MyStories";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +70,11 @@ const AppContent = () => {
       <Route path="/settings" element={<Settings />} />
       <Route path="/settings/language" element={<LanguageSettings />} />
       <Route path="/liked-posts" element={<LikedPosts />} />
+      {/* New settings sub-pages */}
+      <Route path="/liked" element={<LikedPostsReels />} />
+      <Route path="/archive" element={<Archive />} />
+      <Route path="/blocked" element={<BlockedUsers />} />
+      <Route path="/mystories" element={<MyStories />} />
       <Route path="/add-story" element={<AddStory />} />
       <Route path="/story/:userIndex/:storyIndex" element={<StoryViewerPage />} />
       <Route path="/user/:userId" element={<UserProfile />} />

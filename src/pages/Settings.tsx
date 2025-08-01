@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, User, Lock, Bell, Eye, Heart, Shield, HelpCircle, LogOut, Moon, Globe, Camera, ThumbsUp, Play, Database, Key } from 'lucide-react';
+import { ArrowLeft, User, Lock, Bell, Eye, Heart, Shield, HelpCircle, LogOut, Moon, Globe, Camera, ThumbsUp, Play, Database, Key, Archive } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { Button } from '@/components/ui/button';
@@ -158,9 +158,9 @@ const Settings = () => {
                   </div>
                 )}
 
-                <div className="flex items-center justify-between py-2">
+                <div className="flex items-center justify-between py-2 cursor-pointer" onClick={() => navigate('/archive')}>
                   <div className="flex items-center space-x-3">
-                    <Camera size={20} className="text-muted-foreground" />
+                    <Archive size={20} className="text-muted-foreground" />
                     <span className="text-foreground">Archive</span>
                   </div>
                   <Button variant="ghost" size="sm">
@@ -168,7 +168,7 @@ const Settings = () => {
                   </Button>
                 </div>
 
-                <div className="flex items-center justify-between py-2">
+                <div className="flex items-center justify-between py-2 cursor-pointer" onClick={() => navigate('/liked')}>
                   <div className="flex items-center space-x-3">
                     <ThumbsUp size={20} className="text-muted-foreground" />
                     <span className="text-foreground">Liked Posts</span>
@@ -178,10 +178,10 @@ const Settings = () => {
                   </Button>
                 </div>
 
-                <div className="flex items-center justify-between py-2">
+                <div className="flex items-center justify-between py-2 cursor-pointer" onClick={() => navigate('/mystories')}>
                   <div className="flex items-center space-x-3">
                     <Play size={20} className="text-muted-foreground" />
-                    <span className="text-foreground">Liked Reels</span>
+                    <span className="text-foreground">My Stories</span>
                   </div>
                   <Button variant="ghost" size="sm">
                     <ArrowLeft size={16} className="rotate-180" />
@@ -214,7 +214,7 @@ const Settings = () => {
                   </Button>
                 </div>
 
-                <div className="flex items-center justify-between py-2">
+                <div className="flex items-center justify-between py-2 cursor-pointer" onClick={() => navigate('/blocked')}>
                   <div className="flex items-center space-x-3">
                     <Shield size={20} className="text-muted-foreground" />
                     <span className="text-foreground">Blocked Accounts</span>
