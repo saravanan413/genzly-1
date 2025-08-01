@@ -1,8 +1,10 @@
 
 import React, { useState } from 'react';
-import { ArrowLeft, MessageCircle, Share, Shield, ShieldOff } from 'lucide-react';
+import { ArrowLeft, MessageCircle, MoreVertical, Shield, ShieldOff, Eye, Info, Share } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { UserProfile } from '../../services/firestoreService';
 import { blockUser, unblockUser } from '../../services/privacy/privacyService';
@@ -42,6 +44,8 @@ const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
   const { toast } = useToast();
   const [blockLoading, setBlockLoading] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showMoreSheet, setShowMoreSheet] = useState(false);
+  const [showAboutModal, setShowAboutModal] = useState(false);
 
   const handleBlockUser = async () => {
     if (!currentUser || !user?.id || blockLoading) {
@@ -124,29 +128,111 @@ const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
             <span className="text-sm md:text-base">Back</span>
           </Link>
           
-          {/* Share and Report Buttons - Top Right */}
-          <div className="ml-auto flex space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="p-2"
-              onClick={onShareClick}
-              aria-label="Share Profile"
-            >
-              <Share size={16} className="md:w-5 md:h-5" />
-            </Button>
-            {!isOwnProfile && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="p-2"
-                onClick={() => setShowReportModal(true)}
-                aria-label="Report User"
-              >
-                <Shield size={16} className="md:w-5 md:h-5" />
-              </Button>
-            )}
-          </div>
+          {/* 3-dot Menu - Top Right (only for other users) */}
+          {!isOwnProfile && (
+            <div className="ml-auto">
+              <Sheet open={showMoreSheet} onOpenChange={setShowMoreSheet}>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="p-2"
+                    aria-label="More options"
+                  >
+                    <MoreVertical size={20} />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="h-auto">
+                  <SheetHeader>
+                    <SheetTitle>Profile Options</SheetTitle>
+                  </SheetHeader>
+                  <div className="py-6 space-y-4">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-left h-12"
+                      onClick={() => {
+                        handleBlockUser();
+                        setShowMoreSheet(false);
+                      }}
+                      disabled={blockLoading}
+                    >
+                      {isBlocked ? (
+                        <>
+                          <ShieldOff className="mr-3 h-5 w-5" />
+                          Unblock
+                        </>
+                      ) : (
+                        <>
+                          <Shield className="mr-3 h-5 w-5" />
+                          Block
+                        </>
+                      )}
+                    </Button>
+                    
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-left h-12"
+                      onClick={() => {
+                        setShowReportModal(true);
+                        setShowMoreSheet(false);
+                      }}
+                    >
+                      <Shield className="mr-3 h-5 w-5" />
+                      Report
+                    </Button>
+                    
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-left h-12"
+                      onClick={() => {
+                        toast({
+                          title: "Restrict",
+                          description: "This feature is coming soon.",
+                          duration: 3000
+                        });
+                        setShowMoreSheet(false);
+                      }}
+                    >
+                      <Eye className="mr-3 h-5 w-5" />
+                      Restrict
+                    </Button>
+                    
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-left h-12"
+                      onClick={() => {
+                        if (navigator.share) {
+                          navigator.share({
+                            title: `@${user?.username} on Genzly`,
+                            text: `Check out @${user?.username}'s profile`,
+                            url: window.location.href
+                          }).catch(console.error);
+                        } else {
+                          onShareClick();
+                        }
+                        setShowMoreSheet(false);
+                      }}
+                    >
+                      <Share className="mr-3 h-5 w-5" />
+                      Share This Profile
+                    </Button>
+                    
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-left h-12"
+                      onClick={() => {
+                        setShowAboutModal(true);
+                        setShowMoreSheet(false);
+                      }}
+                    >
+                      <Info className="mr-3 h-5 w-5" />
+                      About This Account
+                    </Button>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+          )}
         </div>
 
         {/* Profile Picture */}
@@ -163,7 +249,7 @@ const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
         {/* Username */}
         <h1 className="text-xl md:text-2xl font-semibold mb-4">@{user?.username}</h1>
 
-        {/* Follow, Message, and Block Buttons */}
+        {/* Follow and Message Buttons */}
         {!isOwnProfile && (
           <div className="flex space-x-3 mb-6">
             <Button 
@@ -182,26 +268,6 @@ const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
             >
               <MessageCircle size={16} className="mr-2" />
               Message
-            </Button>
-            <Button 
-              variant="outline" 
-              className="px-4 py-2 rounded-full"
-              onClick={handleBlockUser}
-              disabled={blockLoading}
-            >
-              {blockLoading ? (
-                <span className="animate-spin">⏳</span>
-              ) : isBlocked ? (
-                <>
-                  <ShieldOff size={16} className="mr-2" />
-                  Unblock
-                </>
-              ) : (
-                <>
-                  <Shield size={16} className="mr-2" />
-                  Block
-                </>
-              )}
             </Button>
           </div>
         )}
@@ -278,6 +344,49 @@ const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
         targetUserId={user?.id}
         targetUsername={user?.username}
       />
+
+      {/* About This Account Modal */}
+      <Dialog open={showAboutModal} onOpenChange={setShowAboutModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>About This Account</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 rounded-full border-2 border-primary/20 p-0.5">
+                <img
+                  src={avatarUrl}
+                  alt={user?.displayName || user?.username}
+                  className="w-full h-full rounded-full object-cover"
+                />
+              </div>
+              <div>
+                <h3 className="font-medium">@{user?.username}</h3>
+                <p className="text-sm text-muted-foreground">{user?.displayName || 'No display name'}</p>
+              </div>
+            </div>
+            
+            <div className="space-y-3 border-t pt-4">
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">User ID:</span>
+                <span className="text-sm font-mono">{user?.id}</span>
+              </div>
+              
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Account Created:</span>
+                <span className="text-sm">Recently joined</span>
+              </div>
+              
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Email Verified:</span>
+                <span className="text-sm">
+                  {user?.isVerified ? '✅ Verified' : '❌ Not verified'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
