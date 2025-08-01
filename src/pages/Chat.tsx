@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import ChatHeader from '../components/chat/ChatHeader';
 import ChatList from '../components/chat/ChatList';
+import NotesBar from '../components/chat/NotesBar';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   subscribeToUserChatList, 
@@ -166,37 +167,44 @@ const Chat = () => {
 
   return (
     <Layout>
-      <div className="p-4 md:p-6 w-full bg-background dark:bg-gray-900">
+      <div className="w-full bg-background dark:bg-gray-900">
         <div className="w-full max-w-2xl mx-auto">
-          <ChatHeader onNewChat={handleNewChat} />
-          
-          {/* Cache indicator for debugging */}
-          {isFromCache && !loading && (
-            <div className="mb-2 text-xs text-muted-foreground text-center">
-              Showing cached chats ({chatList.length}) • Syncing...
-            </div>
-          )}
-          
-          <div className="mb-6">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search chats..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl border-0 focus:ring-2 focus:ring-primary/20 placeholder-gray-500"
-              />
-            </div>
+          <div className="p-4 md:p-6">
+            <ChatHeader onNewChat={handleNewChat} />
           </div>
+          
+          {/* Notes Bar */}
+          <NotesBar />
+          
+          <div className="p-4 md:p-6">
+            {/* Cache indicator for debugging */}
+            {isFromCache && !loading && (
+              <div className="mb-2 text-xs text-muted-foreground text-center">
+                Showing cached chats ({chatList.length}) • Syncing...
+              </div>
+            )}
+            
+            <div className="mb-6">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search chats..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl border-0 focus:ring-2 focus:ring-primary/20 placeholder-gray-500"
+                />
+              </div>
+            </div>
 
-          <ChatList
-            chatPreviews={chatPreviews}
-            loading={showLoading}
-            searchQuery={searchQuery}
-            currentUserId={currentUser.uid}
-            onChatClick={handleChatClick}
-            onDoubleTap={handleDoubleTap}
-          />
+            <ChatList
+              chatPreviews={chatPreviews}
+              loading={showLoading}
+              searchQuery={searchQuery}
+              currentUserId={currentUser.uid}
+              onChatClick={handleChatClick}
+              onDoubleTap={handleDoubleTap}
+            />
+          </div>
         </div>
       </div>
     </Layout>
