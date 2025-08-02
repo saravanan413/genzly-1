@@ -25,7 +25,7 @@ const ViewNoteModal = ({ note, isOpen, onClose, formatTimeAgo }: ViewNoteModalPr
           
           <div className="text-center space-y-2">
             <h3 className="font-semibold text-lg">{note.username}</h3>
-            <p className="text-xl">{note.text}</p>
+            <p className="text-xl">{note.content}</p>
             <p className="text-sm text-muted-foreground">
               {formatTimeAgo(note.createdAt)}
             </p>
