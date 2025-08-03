@@ -77,25 +77,25 @@ const NotesBar = () => {
       <div className="flex overflow-x-auto gap-3 p-2">
         {/* Your Note */}
         <div className="flex flex-col items-center flex-shrink-0">
+          {currentUserNote && (
+            <div className="bg-card border border-border rounded-full px-3 py-1 mb-2 max-w-[120px]">
+              <p className="text-xs text-foreground truncate text-center">{currentUserNote.content}</p>
+            </div>
+          )}
           <button
             onClick={() => setShowCreateModal(true)}
             className="relative w-14 h-14 rounded-full"
           >
             {currentUserNote ? (
-              <div className="relative w-14 h-14 rounded-full border-2 border-primary">
-                <img 
-                  src={getProfileImageUrl({ userAvatar: currentUser?.photoURL, uid: currentUser?.uid })} 
-                  alt="Your profile"
-                  className="rounded-full w-full h-full object-cover" 
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = currentUser?.photoURL || '';
-                  }}
-                />
-                <div className="absolute bottom-0 text-xs w-full text-center text-white bg-black bg-opacity-50 truncate rounded-b-full px-1">
-                  {currentUserNote.content}
-                </div>
-              </div>
+              <img 
+                src={getProfileImageUrl({ userAvatar: currentUser?.photoURL, uid: currentUser?.uid })} 
+                alt="Your profile"
+                className="rounded-full w-full h-full object-cover border-2 border-primary" 
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = '/07e28f82-bd38-410c-a208-5db174616626.png';
+                }}
+              />
             ) : (
               <div className="w-14 h-14 rounded-full border-2 border-dashed border-muted-foreground flex items-center justify-center">
                 <Plus className="w-6 h-6 text-muted-foreground" />
@@ -115,20 +115,18 @@ const NotesBar = () => {
               setShowViewModal(true);
             }}
           >
-            <div className="relative w-14 h-14 rounded-full border-2 border-primary">
-              <img 
-                src={getProfileImageUrl(note)} 
-                alt={`${note.username}'s profile`}
-                className="rounded-full w-full h-full object-cover" 
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = note.userAvatar || '';
-                }}
-              />
-              <div className="absolute bottom-0 text-xs w-full text-center text-white bg-black bg-opacity-50 truncate rounded-b-full px-1">
-                {note.content}
-              </div>
+            <div className="bg-card border border-border rounded-full px-3 py-1 mb-2 max-w-[120px]">
+              <p className="text-xs text-foreground truncate text-center">{note.content}</p>
             </div>
+            <img 
+              src={getProfileImageUrl(note)} 
+              alt={`${note.username}'s profile`}
+              className="rounded-full w-14 h-14 object-cover border-2 border-primary" 
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = '/07e28f82-bd38-410c-a208-5db174616626.png';
+              }}
+            />
             <p className="text-xs text-foreground mt-1">{note.username}</p>
           </div>
         ))}
