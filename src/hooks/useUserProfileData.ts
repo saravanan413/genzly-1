@@ -118,7 +118,9 @@ export const useUserProfileData = (userId: string | undefined) => {
         success = await unfollowUser(currentUser.uid, userId);
         if (success) {
           console.log('Successfully unfollowed user or cancelled request');
+          // Don't manually update state - let the real-time listeners handle it
         } else {
+          console.error('Failed to unfollow user');
           setError('Failed to unfollow user. Please try again.');
         }
       } else {
@@ -126,7 +128,9 @@ export const useUserProfileData = (userId: string | undefined) => {
         success = await followUser(currentUser.uid, userId);
         if (success) {
           console.log('Successfully followed user or sent request');
+          // Don't manually update state - let the real-time listeners handle it
         } else {
+          console.error('Failed to follow user');
           setError('Failed to follow user. Please try again.');
         }
       }
