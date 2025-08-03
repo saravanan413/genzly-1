@@ -10,6 +10,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useUserProfile } from '../hooks/useFirebaseData';
 import ChangePasswordModal from '../components/auth/ChangePasswordModal';
+import LogoutConfirmationDialog from '../components/LogoutConfirmationDialog';
 
 const Settings = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -21,6 +22,7 @@ const Settings = () => {
            localStorage.getItem('theme') === 'dark';
   });
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false);
   const [updatingPrivacy, setUpdatingPrivacy] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   
@@ -100,6 +102,7 @@ const Settings = () => {
       });
     } finally {
       setLoggingOut(false);
+      setShowLogoutConfirmation(false);
     }
   };
 
@@ -327,7 +330,7 @@ const Settings = () => {
               <Button 
                 variant="destructive" 
                 className="w-full flex items-center space-x-2"
-                onClick={handleLogout}
+                onClick={() => setShowLogoutConfirmation(true)}
                 disabled={loggingOut}
               >
                 <LogOut size={20} />
@@ -342,6 +345,13 @@ const Settings = () => {
       <ChangePasswordModal
         isOpen={showChangePassword}
         onClose={() => setShowChangePassword(false)}
+      />
+
+      {/* Logout Confirmation Dialog */}
+      <LogoutConfirmationDialog
+        isOpen={showLogoutConfirmation}
+        onClose={() => setShowLogoutConfirmation(false)}
+        onConfirm={handleLogout}
       />
     </Layout>
   );

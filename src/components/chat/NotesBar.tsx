@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -54,6 +55,11 @@ const NotesBar = () => {
     return '';
   };
 
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const target = e.target as HTMLImageElement;
+    target.src = '/assets/images/07e28f82-bd38-410c-a208-5db174616626.png';
+  };
+
   if (loading) {
     return (
       <div className="p-4 border-b border-border">
@@ -91,10 +97,7 @@ const NotesBar = () => {
                 src={getProfileImageUrl({ userAvatar: currentUser?.photoURL, uid: currentUser?.uid })} 
                 alt="Your profile"
                 className="rounded-full w-full h-full object-cover border-2 border-primary" 
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = '/07e28f82-bd38-410c-a208-5db174616626.png';
-                }}
+                onError={handleImageError}
               />
             ) : (
               <div className="w-14 h-14 rounded-full border-2 border-dashed border-muted-foreground flex items-center justify-center">
@@ -122,10 +125,7 @@ const NotesBar = () => {
               src={getProfileImageUrl(note)} 
               alt={`${note.username}'s profile`}
               className="rounded-full w-14 h-14 object-cover border-2 border-primary" 
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = '/07e28f82-bd38-410c-a208-5db174616626.png';
-              }}
+              onError={handleImageError}
             />
             <p className="text-xs text-foreground mt-1">{note.username}</p>
           </div>
