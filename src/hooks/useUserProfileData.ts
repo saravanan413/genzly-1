@@ -32,11 +32,7 @@ export const useUserProfileData = (userId: string | undefined) => {
       logger.debug('Setting up follow status subscription for:', currentUser.uid, 'and', userId);
       setInitialLoading(true);
       
-      const unsubscribe = subscribeToFollowStatus(currentUser.uid, userId, (status) => {
-        logger.debug('Follow status updated:', status);
-        setIsFollowing(status);
-        setInitialLoading(false);
-      });
+      const unsubscribe = subscribeToFollowStatus(currentUserId, targetUserId, callback);
       
       return unsubscribe;
     } else {
