@@ -12,7 +12,6 @@ import {
   subscribeToFollowRequestStatus,
   subscribeToBlockedStatus
 } from '../services/privacy/privacyService';
-import { logger } from '../utils/logger';
 
 export const useUserProfileData = (userId: string | undefined) => {
   const { currentUser } = useAuth();
@@ -29,10 +28,14 @@ export const useUserProfileData = (userId: string | undefined) => {
   // Subscribe to follow status with real-time updates
   useEffect(() => {
     if (currentUser && userId && !isOwnProfile) {
-      logger.debug('Setting up follow status subscription for:', currentUser.uid, 'and', userId);
+      console.log('Setting up follow status subscription for:', currentUser.uid, 'and', userId);
       setInitialLoading(true);
       
-      const unsubscribe = subscribeToFollowStatus(currentUserId, targetUserId, callback);
+      const unsubscribe = subscribeToFollowStatus(currentUser.uid, userId, (status) => {
+        console.log('Follow status updated:', status);
+        setIsFollowing(status);
+        setInitialLoading(false);
+      });
       
       return unsubscribe;
     } else {
@@ -43,10 +46,10 @@ export const useUserProfileData = (userId: string | undefined) => {
   // Subscribe to follow request status
   useEffect(() => {
     if (currentUser && userId && !isOwnProfile) {
-      logger.debug('Setting up follow request status subscription for:', currentUser.uid, 'and', userId);
+      console.log('Setting up follow request status subscription for:', currentUser.uid, 'and', userId);
       
       const unsubscribe = subscribeToFollowRequestStatus(currentUser.uid, userId, (hasRequest) => {
-        logger.debug('Follow request status updated:', hasRequest);
+        console.log('Follow request status updated:', hasRequest);
         setHasFollowRequest(hasRequest);
       });
       
@@ -57,10 +60,10 @@ export const useUserProfileData = (userId: string | undefined) => {
   // Subscribe to blocked status
   useEffect(() => {
     if (currentUser && userId && !isOwnProfile) {
-      logger.debug('Setting up blocked status subscription for:', currentUser.uid, 'and', userId);
+      console.log('Setting up blocked status subscription for:', currentUser.uid, 'and', userId);
       
       const unsubscribe = subscribeToBlockedStatus(currentUser.uid, userId, (blocked) => {
-        logger.debug('Blocked status updated:', blocked);
+        console.log('Blocked status updated:', blocked);
         setIsBlocked(blocked);
       });
       
@@ -71,9 +74,9 @@ export const useUserProfileData = (userId: string | undefined) => {
   // Subscribe to followers count with real-time updates
   useEffect(() => {
     if (userId) {
-      logger.debug('Setting up followers count subscription for:', userId);
+      console.log('Setting up followers count subscription for:', userId);
       const unsubscribe = subscribeToFollowersCount(userId, (count) => {
-        logger.debug('Followers count updated:', count);
+        console.log('Followers count updated:', count);
         setFollowCounts(prev => ({ ...prev, followers: count }));
       });
       return unsubscribe;
@@ -83,9 +86,9 @@ export const useUserProfileData = (userId: string | undefined) => {
   // Subscribe to following count with real-time updates
   useEffect(() => {
     if (userId) {
-      logger.debug('Setting up following count subscription for:', userId);
+      console.log('Setting up following count subscription for:', userId);
       const unsubscribe = subscribeToFollowingCount(userId, (count) => {
-        logger.debug('Following count updated:', count);
+        console.log('Following count updated:', count);
         setFollowCounts(prev => ({ ...prev, following: count }));
       });
       return unsubscribe;
@@ -94,7 +97,7 @@ export const useUserProfileData = (userId: string | undefined) => {
 
   const handleFollowClick = async () => {
     if (!currentUser || !userId || loading || isOwnProfile || initialLoading) {
-      logger.debug('Cannot follow - validation failed:', { 
+      console.log('Cannot follow - validation failed:', { 
         currentUser: !!currentUser, 
         userId, 
         loading, 
@@ -104,52 +107,36 @@ export const useUserProfileData = (userId: string | undefined) => {
       return;
     }
 
-    logger.debug('Follow button clicked. Current status:', { isFollowing, hasFollowRequest });
+    console.log('Follow button clicked. Current status:', { isFollowing, hasFollowRequest });
     setLoading(true);
     setError(null);
     
     try {
       let success = false;
-      let actionType = '';
-      
       if (isFollowing || hasFollowRequest) {
-        logger.debug('Attempting to unfollow user or cancel request...');
-        actionType = hasFollowRequest ? 'cancel request' : 'unfollow';
+        console.log('Attempting to unfollow user or cancel request...');
         success = await unfollowUser(currentUser.uid, userId);
-        
         if (success) {
-          logger.debug(`Successfully ${actionType} user`);
+          console.log('Successfully unfollowed user or cancelled request');
         } else {
-          setError(`Failed to ${actionType}. Please try again.`);
+          setError('Failed to unfollow user. Please try again.');
         }
       } else {
-        logger.debug('Attempting to follow user...');
-        actionType = 'follow';
+        console.log('Attempting to follow user...');
         success = await followUser(currentUser.uid, userId);
-        
         if (success) {
-          logger.debug('Successfully followed user or sent request');
+          console.log('Successfully followed user or sent request');
         } else {
-          setError('Failed to follow user. Please check your connection and try again.');
+          setError('Failed to follow user. Please try again.');
         }
       }
 
       if (!success) {
-        logger.error(`${actionType} operation failed`);
-        
-        // Clear error after 3 seconds
-        setTimeout(() => {
-          setError(null);
-        }, 3000);
+        console.error('Follow/unfollow operation failed');
       }
-    } catch (error: any) {
-      logger.error('Error updating follow status:', error);
+    } catch (error) {
+      console.error('Error updating follow status:', error);
       setError('An unexpected error occurred. Please try again.');
-      
-      // Clear error after 3 seconds
-      setTimeout(() => {
-        setError(null);
-      }, 3000);
     } finally {
       setLoading(false);
     }
