@@ -16,6 +16,7 @@ import { createOrUpdateUserProfile, getUserProfile, UserProfile } from '../servi
 import { logout as authServiceLogout } from '../services/authService';
 import firebaseApp from '../config/firebase';
 import { logger } from '../utils/logger';
+import LogoutConfirmationDialog from '../components/LogoutConfirmationDialog';
 
 interface AuthContextProps {
   currentUser: User | null;
@@ -24,7 +25,7 @@ interface AuthContextProps {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, username: string, displayName: string) => Promise<void>;
-  logout: () => Promise<void>;
+  logout: () => void;
   signInWithGoogle: () => Promise<void>;
   googleLogin: () => Promise<void>;
 }
@@ -36,7 +37,7 @@ const AuthContext = createContext<AuthContextProps>({
   login: async () => {},
   register: async () => {},
   signup: async () => {},
-  logout: async () => {},
+  logout: () => {},
   signInWithGoogle: async () => {},
   googleLogin: async () => {},
 });
@@ -45,6 +46,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
   const auth = getAuth(firebaseApp);
   const googleProvider = new GoogleAuthProvider();
 
@@ -130,7 +133,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = async (): Promise<void> => {
+  const logout = () => {
+    setShowLogoutDialog(true);
+  };
+
+  const handleConfirmLogout = async () => {
+    setLogoutLoading(true);
     try {
       // Clear chat cache before logging out
       const { clearCachedChatList } = await import('../services/chat/chatListService');
@@ -139,7 +147,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await authServiceLogout();
     } catch (error) {
       logger.error('Logout failed', error);
-      throw error;
+    } finally {
+      setLogoutLoading(false);
+      setShowLogoutDialog(false);
     }
   };
 
@@ -260,6 +270,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <AuthContext.Provider value={value}>
       {!loading && children}
+      <LogoutConfirmationDialog
+        isOpen={showLogoutDialog}
+        onClose={() => setShowLogoutDialog(false)}
+        onConfirm={handleConfirmLogout}
+        loading={logoutLoading}
+      />
     </AuthContext.Provider>
   );
 };
