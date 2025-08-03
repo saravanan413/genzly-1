@@ -16,7 +16,6 @@ import { createOrUpdateUserProfile, getUserProfile, UserProfile } from '../servi
 import { logout as authServiceLogout } from '../services/authService';
 import firebaseApp from '../config/firebase';
 import { logger } from '../utils/logger';
-import LogoutConfirmationDialog from '../components/LogoutConfirmationDialog';
 
 interface AuthContextProps {
   currentUser: User | null;
@@ -46,7 +45,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const auth = getAuth(firebaseApp);
   const googleProvider = new GoogleAuthProvider();
 
@@ -132,7 +130,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const performLogout = async (): Promise<void> => {
+  const logout = async (): Promise<void> => {
     try {
       // Clear chat cache before logging out
       const { clearCachedChatList } = await import('../services/chat/chatListService');
@@ -143,19 +141,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logger.error('Logout failed', error);
       throw error;
     }
-  };
-
-  const logout = async (): Promise<void> => {
-    setShowLogoutDialog(true);
-  };
-
-  const handleLogoutConfirm = async () => {
-    setShowLogoutDialog(false);
-    await performLogout();
-  };
-
-  const handleLogoutCancel = () => {
-    setShowLogoutDialog(false);
   };
 
   const signInWithGoogle = async (): Promise<void> => {
@@ -275,11 +260,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <AuthContext.Provider value={value}>
       {!loading && children}
-      <LogoutConfirmationDialog
-        isOpen={showLogoutDialog}
-        onClose={handleLogoutCancel}
-        onConfirm={handleLogoutConfirm}
-      />
     </AuthContext.Provider>
   );
 };

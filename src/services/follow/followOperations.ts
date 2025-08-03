@@ -25,10 +25,7 @@ export const followUser = async (currentUserId: string, targetUserId: string) =>
     ]);
     
     if (!currentUserDoc.exists() || !targetUserDoc.exists()) {
-      console.error('User documents not found:', {
-        currentUserExists: currentUserDoc.exists(),
-        targetUserExists: targetUserDoc.exists()
-      });
+      console.error('User documents not found');
       return false;
     }
 
@@ -46,47 +43,29 @@ export const followUser = async (currentUserId: string, targetUserId: string) =>
     // Use batch write for atomic operations
     const batch = writeBatch(db);
 
-    try {
-      // Create document at /users/{targetUserId}/followers/{currentUserId}
-      const followersRef = doc(db, 'users', targetUserId, 'followers', currentUserId);
-      batch.set(followersRef, {
-        uid: currentUserId,
-        username: currentUserData.username || 'Unknown',
-        displayName: currentUserData.displayName || 'Unknown User',
-        avatar: currentUserData.avatar || null,
-        timestamp: serverTimestamp()
-      });
+    // Create document at /users/{targetUserId}/followers/{currentUserId}
+    const followersRef = doc(db, 'users', targetUserId, 'followers', currentUserId);
+    batch.set(followersRef, {
+      uid: currentUserId,
+      username: currentUserData.username || 'Unknown',
+      displayName: currentUserData.displayName || 'Unknown User',
+      avatar: currentUserData.avatar || null,
+      timestamp: serverTimestamp()
+    });
 
-      // Create document at /users/{currentUserId}/following/{targetUserId}
-      const followingRef = doc(db, 'users', currentUserId, 'following', targetUserId);
-      batch.set(followingRef, {
-        uid: targetUserId,
-        username: targetUserData.username || 'Unknown',
-        displayName: targetUserData.displayName || 'Unknown User',
-        avatar: targetUserData.avatar || null,
-        timestamp: serverTimestamp()
-      });
+    // Create document at /users/{currentUserId}/following/{targetUserId}
+    const followingRef = doc(db, 'users', currentUserId, 'following', targetUserId);
+    batch.set(followingRef, {
+      uid: targetUserId,
+      username: targetUserData.username || 'Unknown',
+      displayName: targetUserData.displayName || 'Unknown User',
+      avatar: targetUserData.avatar || null,
+      timestamp: serverTimestamp()
+    });
 
-      await batch.commit();
-      console.log('Follow operation completed successfully');
-      return true;
-    } catch (firestoreError: any) {
-      console.error('Firestore permission or write error during follow:', {
-        code: firestoreError.code,
-        message: firestoreError.message,
-        currentUserId,
-        targetUserId
-      });
-      
-      // Handle specific Firestore errors
-      if (firestoreError.code === 'permission-denied') {
-        console.error('Permission denied - check Firestore rules for follow operation');
-      } else if (firestoreError.code === 'not-found') {
-        console.error('Document not found during follow operation');
-      }
-      
-      return false;
-    }
+    await batch.commit();
+    console.log('Follow operation completed successfully');
+    return true;
   } catch (error) {
     console.error('Error following user:', error);
     return false;
@@ -101,6 +80,8 @@ export const unfollowUser = async (currentUserId: string, targetUserId: string) 
 
   try {
     console.log('Starting unfollow operation:', { currentUserId, targetUserId });
+    console.log('Current user trying to unfollow:', currentUserId);
+    console.log('Target user being unfollowed:', targetUserId);
     
     // Check if this is a follow request that needs to be cancelled
     const targetUserDoc = await getDoc(doc(db, 'users', targetUserId));
@@ -114,6 +95,8 @@ export const unfollowUser = async (currentUserId: string, targetUserId: string) 
     const followingRef = doc(db, 'users', currentUserId, 'following', targetUserId);
     
     console.log('Checking document existence...');
+    console.log('Followers ref path:', followersRef.path);
+    console.log('Following ref path:', followingRef.path);
 
     // Check if the documents exist before trying to delete them
     const [followersDoc, followingDoc] = await Promise.all([
@@ -121,58 +104,44 @@ export const unfollowUser = async (currentUserId: string, targetUserId: string) 
       getDoc(followingRef)
     ]);
 
-    console.log('Document existence check results:', {
-      followersDocExists: followersDoc.exists(),
-      followingDocExists: followingDoc.exists()
-    });
+    console.log('Document existence check results:');
+    console.log('Followers doc exists:', followersDoc.exists());
+    console.log('Following doc exists:', followingDoc.exists());
 
     // Use batch write for atomic operations
     const batch = writeBatch(db);
     let hasOperations = false;
 
-    try {
-      // Delete from followers if it exists
-      if (followersDoc.exists()) {
-        console.log('Adding followers deletion to batch');
-        batch.delete(followersRef);
-        hasOperations = true;
-      }
-      
-      // Delete from following if it exists
-      if (followingDoc.exists()) {
-        console.log('Adding following deletion to batch');
-        batch.delete(followingRef);
-        hasOperations = true;
-      }
+    // Delete from followers if it exists
+    if (followersDoc.exists()) {
+      console.log('Adding followers deletion to batch');
+      batch.delete(followersRef);
+      hasOperations = true;
+    }
+    
+    // Delete from following if it exists
+    if (followingDoc.exists()) {
+      console.log('Adding following deletion to batch');
+      batch.delete(followingRef);
+      hasOperations = true;
+    }
 
-      if (hasOperations) {
-        console.log('Committing batch operations...');
-        await batch.commit();
-        console.log('Unfollow operation completed successfully');
-        return true;
-      } else {
-        console.log('No follow relationship found to remove');
-        return true; // Not an error - they weren't following anyway
-      }
-    } catch (firestoreError: any) {
-      console.error('Firestore permission or write error during unfollow:', {
-        code: firestoreError.code,
-        message: firestoreError.message,
-        currentUserId,
-        targetUserId
-      });
-      
-      // Handle specific Firestore errors
-      if (firestoreError.code === 'permission-denied') {
-        console.error('Permission denied - check Firestore rules for unfollow operation');
-      } else if (firestoreError.code === 'not-found') {
-        console.error('Document not found during unfollow operation');
-      }
-      
-      return false;
+    if (hasOperations) {
+      console.log('Committing batch operations...');
+      await batch.commit();
+      console.log('Unfollow operation completed successfully');
+      return true;
+    } else {
+      console.log('No follow relationship found to remove');
+      return true; // Not an error - they weren't following anyway
     }
   } catch (error) {
     console.error('Error unfollowing user:', error);
+    console.error('Error details:', {
+      code: error.code,
+      message: error.message,
+      stack: error.stack
+    });
     return false;
   }
 };
@@ -185,10 +154,16 @@ export const removeFollower = async (currentUserId: string, followerUserId: stri
 
   try {
     console.log('Starting remove follower operation:', { currentUserId, followerUserId });
+    console.log('Current user (who is removing):', currentUserId);
+    console.log('Follower user (being removed):', followerUserId);
     
     // Define the document references we need to check and potentially delete
     const followersRef = doc(db, 'users', currentUserId, 'followers', followerUserId);
     const followingRef = doc(db, 'users', followerUserId, 'following', currentUserId);
+    
+    console.log('Document references:');
+    console.log('Followers ref path:', followersRef.path);
+    console.log('Following ref path:', followingRef.path);
 
     // Check if the documents exist before trying to delete them
     const [followersDoc, followingDoc] = await Promise.all([
@@ -196,58 +171,44 @@ export const removeFollower = async (currentUserId: string, followerUserId: stri
       getDoc(followingRef)
     ]);
 
-    console.log('Document existence check results:', {
-      followersDocExists: followersDoc.exists(),
-      followingDocExists: followingDoc.exists()
-    });
+    console.log('Document existence check results:');
+    console.log('Followers doc exists:', followersDoc.exists());
+    console.log('Following doc exists:', followingDoc.exists());
 
     // Use batch write for atomic operations
     const batch = writeBatch(db);
     let hasOperations = false;
 
-    try {
-      // Remove from current user's followers collection if it exists
-      if (followersDoc.exists()) {
-        console.log('Adding followers deletion to batch');
-        batch.delete(followersRef);
-        hasOperations = true;
-      }
-      
-      // Remove from follower's following collection if it exists
-      if (followingDoc.exists()) {
-        console.log('Adding following deletion to batch');
-        batch.delete(followingRef);
-        hasOperations = true;
-      }
+    // Remove from current user's followers collection if it exists
+    if (followersDoc.exists()) {
+      console.log('Adding followers deletion to batch');
+      batch.delete(followersRef);
+      hasOperations = true;
+    }
+    
+    // Remove from follower's following collection if it exists
+    if (followingDoc.exists()) {
+      console.log('Adding following deletion to batch');
+      batch.delete(followingRef);
+      hasOperations = true;
+    }
 
-      if (hasOperations) {
-        console.log('Committing batch operations...');
-        await batch.commit();
-        console.log('Remove follower operation completed successfully');
-        return true;
-      } else {
-        console.log('No follower relationship found to remove');
-        return true; // Not an error - they weren't following anyway
-      }
-    } catch (firestoreError: any) {
-      console.error('Firestore permission or write error during remove follower:', {
-        code: firestoreError.code,
-        message: firestoreError.message,
-        currentUserId,
-        followerUserId
-      });
-      
-      // Handle specific Firestore errors
-      if (firestoreError.code === 'permission-denied') {
-        console.error('Permission denied - check Firestore rules for remove follower operation');
-      } else if (firestoreError.code === 'not-found') {
-        console.error('Document not found during remove follower operation');
-      }
-      
-      return false;
+    if (hasOperations) {
+      console.log('Committing batch operations...');
+      await batch.commit();
+      console.log('Remove follower operation completed successfully');
+      return true;
+    } else {
+      console.log('No follower relationship found to remove');
+      return true; // Not an error - they weren't following anyway
     }
   } catch (error) {
     console.error('Error removing follower:', error);
+    console.error('Error details:', {
+      code: error.code,
+      message: error.message,
+      stack: error.stack
+    });
     return false;
   }
 };
