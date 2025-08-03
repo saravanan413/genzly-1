@@ -25,7 +25,7 @@ export const useUserProfileData = (userId: string | undefined) => {
 
   const isOwnProfile = userId === currentUser?.uid;
 
-  // Subscribe to follow status with real-time updates
+  // Subscribe to follow status with real-time updates and better error handling
   useEffect(() => {
     if (currentUser && userId && !isOwnProfile) {
       console.log('Setting up follow status subscription for:', currentUser.uid, 'and', userId);
@@ -35,6 +35,7 @@ export const useUserProfileData = (userId: string | undefined) => {
         console.log('Follow status updated:', status);
         setIsFollowing(status);
         setInitialLoading(false);
+        setError(null); // Clear any previous errors
       });
       
       return unsubscribe;
@@ -113,13 +114,18 @@ export const useUserProfileData = (userId: string | undefined) => {
     
     try {
       let success = false;
+      const originalIsFollowing = isFollowing;
+      const originalHasFollowRequest = hasFollowRequest;
+      
       if (isFollowing || hasFollowRequest) {
         console.log('Attempting to unfollow user or cancel request...');
         success = await unfollowUser(currentUser.uid, userId);
         if (success) {
           console.log('Successfully unfollowed user or cancelled request');
         } else {
+          console.error('Failed to unfollow user');
           setError('Failed to unfollow user. Please try again.');
+          // Don't reset state on failure - let real-time listener handle it
         }
       } else {
         console.log('Attempting to follow user...');
@@ -127,16 +133,28 @@ export const useUserProfileData = (userId: string | undefined) => {
         if (success) {
           console.log('Successfully followed user or sent request');
         } else {
+          console.error('Failed to follow user');
           setError('Failed to follow user. Please try again.');
+          // Don't reset state on failure - let real-time listener handle it
         }
       }
 
-      if (!success) {
-        console.error('Follow/unfollow operation failed');
+      // Clear error on success
+      if (success) {
+        setError(null);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating follow status:', error);
       setError('An unexpected error occurred. Please try again.');
+      
+      // Log specific error details
+      if (error?.code === 'permission-denied') {
+        console.error('Permission denied - user may not have proper access');
+        setError('Permission denied. Please check your account permissions.');
+      } else if (error?.code === 'not-found') {
+        console.error('User not found');
+        setError('User not found. They may have been deleted.');
+      }
     } finally {
       setLoading(false);
     }

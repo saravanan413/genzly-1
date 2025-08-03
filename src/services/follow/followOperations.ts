@@ -1,4 +1,3 @@
-
 import { 
   doc, 
   writeBatch,
@@ -40,7 +39,7 @@ export const followUser = async (currentUserId: string, targetUserId: string) =>
 
     console.log('User data loaded, proceeding with follow operation');
 
-    // Use batch write for atomic operations
+    // Use batch write for atomic operations with proper error handling
     const batch = writeBatch(db);
 
     // Create document at /users/{targetUserId}/followers/{currentUserId}
@@ -50,7 +49,8 @@ export const followUser = async (currentUserId: string, targetUserId: string) =>
       username: currentUserData.username || 'Unknown',
       displayName: currentUserData.displayName || 'Unknown User',
       avatar: currentUserData.avatar || null,
-      timestamp: serverTimestamp()
+      timestamp: serverTimestamp(),
+      createdAt: serverTimestamp()
     });
 
     // Create document at /users/{currentUserId}/following/{targetUserId}
@@ -60,14 +60,28 @@ export const followUser = async (currentUserId: string, targetUserId: string) =>
       username: targetUserData.username || 'Unknown',
       displayName: targetUserData.displayName || 'Unknown User',
       avatar: targetUserData.avatar || null,
-      timestamp: serverTimestamp()
+      timestamp: serverTimestamp(),
+      createdAt: serverTimestamp()
     });
 
     await batch.commit();
     console.log('Follow operation completed successfully');
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error following user:', error);
+    console.error('Error code:', error?.code);
+    console.error('Error message:', error?.message);
+    
+    // Handle specific Firestore errors
+    if (error?.code === 'permission-denied') {
+      console.error('Permission denied - check Firestore rules');
+    } else if (error?.code === 'not-found') {
+      console.error('Document not found - user may not exist');
+    } else if (error?.code === 'already-exists') {
+      console.log('Follow relationship already exists');
+      return true; // Consider this a success
+    }
+    
     return false;
   }
 };
@@ -80,8 +94,6 @@ export const unfollowUser = async (currentUserId: string, targetUserId: string) 
 
   try {
     console.log('Starting unfollow operation:', { currentUserId, targetUserId });
-    console.log('Current user trying to unfollow:', currentUserId);
-    console.log('Target user being unfollowed:', targetUserId);
     
     // Check if this is a follow request that needs to be cancelled
     const targetUserDoc = await getDoc(doc(db, 'users', targetUserId));
@@ -95,8 +107,6 @@ export const unfollowUser = async (currentUserId: string, targetUserId: string) 
     const followingRef = doc(db, 'users', currentUserId, 'following', targetUserId);
     
     console.log('Checking document existence...');
-    console.log('Followers ref path:', followersRef.path);
-    console.log('Following ref path:', followingRef.path);
 
     // Check if the documents exist before trying to delete them
     const [followersDoc, followingDoc] = await Promise.all([
@@ -135,13 +145,19 @@ export const unfollowUser = async (currentUserId: string, targetUserId: string) 
       console.log('No follow relationship found to remove');
       return true; // Not an error - they weren't following anyway
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error unfollowing user:', error);
-    console.error('Error details:', {
-      code: error.code,
-      message: error.message,
-      stack: error.stack
-    });
+    console.error('Error code:', error?.code);
+    console.error('Error message:', error?.message);
+    
+    // Handle specific Firestore errors
+    if (error?.code === 'permission-denied') {
+      console.error('Permission denied - check Firestore rules');
+    } else if (error?.code === 'not-found') {
+      console.log('Document not found - already unfollowed');
+      return true; // Consider this a success
+    }
+    
     return false;
   }
 };

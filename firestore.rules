@@ -8,20 +8,26 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == userId;
       allow update: if request.auth != null && request.auth.uid == userId;
       
-      // Followers subcollection - only profile owner can manage
+      // Followers subcollection - allow users to follow/unfollow others
       match /followers/{followerId} {
+        // Profile owner can read their followers
         allow read: if request.auth != null && request.auth.uid == userId;
-        allow write: if request.auth != null && request.auth.uid == userId;
-        allow create: if request.auth != null && request.auth.uid == userId;
-        allow delete: if request.auth != null && request.auth.uid == userId;
+        // Anyone authenticated can add themselves as a follower
+        allow create: if request.auth != null && request.auth.uid == followerId;
+        // Only the follower can remove themselves, or the profile owner can remove followers
+        allow delete: if request.auth != null && (request.auth.uid == followerId || request.auth.uid == userId);
+        // Allow updates for timestamp changes
+        allow update: if request.auth != null && (request.auth.uid == followerId || request.auth.uid == userId);
       }
       
-      // Following subcollection - only profile owner can manage
+      // Following subcollection - allow users to manage who they follow
       match /following/{followedId} {
+        // Only the profile owner can read/manage their following list
         allow read: if request.auth != null && request.auth.uid == userId;
         allow write: if request.auth != null && request.auth.uid == userId;
         allow create: if request.auth != null && request.auth.uid == userId;
         allow delete: if request.auth != null && request.auth.uid == userId;
+        allow update: if request.auth != null && request.auth.uid == userId;
       }
       
       // Follow requests subcollection - only profile owner can manage
