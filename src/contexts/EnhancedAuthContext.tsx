@@ -281,7 +281,6 @@ export const EnhancedAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
       following: 0,
       postsCount: 0,
       isPrivate: false, // Default to public
-      createdAt: new Date()
     };
     
     try {

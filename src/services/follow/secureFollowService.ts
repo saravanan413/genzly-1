@@ -1,9 +1,9 @@
-
 import { 
   doc, 
   writeBatch,
   serverTimestamp,
-  getDoc
+  getDoc,
+  setDoc
 } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { SecurityService } from '../securityService';
