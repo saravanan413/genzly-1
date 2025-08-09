@@ -34,8 +34,23 @@ export const useUserProfileData = (userId: string | undefined) => {
       const unsubscribe = subscribeToFollowStatus(currentUser.uid, userId, (status) => {
         console.log('Follow status updated:', status);
         setIsFollowing(status);
-        setInitialLoading(false);
         setError(null);
+      });
+      
+      return unsubscribe;
+    }
+  }, [currentUser, userId, isOwnProfile]);
+
+  // CRITICAL FIX: Subscribe to follow request status - listen to the target user's followRequests for current user
+  useEffect(() => {
+    if (currentUser && userId && !isOwnProfile) {
+      console.log('Setting up follow request status subscription - checking if currentUser:', currentUser.uid, 'has request to:', userId);
+      
+      const unsubscribe = subscribeToFollowRequestStatus(currentUser.uid, userId, (hasRequest) => {
+        console.log('Follow request status updated for currentUser in targetUser followRequests:', hasRequest);
+        setHasFollowRequest(hasRequest);
+        // Only stop initial loading after we get both follow and follow request status
+        setInitialLoading(false);
       });
       
       return unsubscribe;
@@ -43,24 +58,6 @@ export const useUserProfileData = (userId: string | undefined) => {
       setInitialLoading(false);
     }
   }, [currentUser, userId, isOwnProfile]);
-
-  // Subscribe to follow request status with real-time updates - CRITICAL FOR PRIVATE ACCOUNTS
-  useEffect(() => {
-    if (currentUser && userId && !isOwnProfile) {
-      console.log('Setting up follow request status subscription for:', currentUser.uid, 'and', userId);
-      
-      const unsubscribe = subscribeToFollowRequestStatus(currentUser.uid, userId, (hasRequest) => {
-        console.log('Follow request status updated:', hasRequest);
-        setHasFollowRequest(hasRequest);
-        // Stop initial loading when we get follow request status
-        if (initialLoading) {
-          setInitialLoading(false);
-        }
-      });
-      
-      return unsubscribe;
-    }
-  }, [currentUser, userId, isOwnProfile, initialLoading]);
 
   // Subscribe to blocked status
   useEffect(() => {
