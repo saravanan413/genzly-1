@@ -102,16 +102,31 @@ const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
 
   const avatarUrl = user?.avatar || getFallbackAvatar();
 
-  // Determine follow button state - FIXED FOR PRIVATE ACCOUNTS
+  // FIXED: Determine follow button state for private accounts
   const getFollowButtonText = () => {
     if (loading) return 'Loading...';
+    
+    // For private accounts: check follow request status first
+    if (user?.isPrivate) {
+      if (isFollowing) return 'Following';
+      if (hasFollowRequest) return 'Requested';
+      return 'Follow';
+    }
+    
+    // For public accounts: only check following status
     if (isFollowing) return 'Following';
-    if (hasFollowRequest) return 'Requested'; // This should stay as 'Requested' for private accounts
     return 'Follow';
   };
 
   const getFollowButtonVariant = () => {
-    if (isFollowing || hasFollowRequest) return 'outline';
+    // For private accounts
+    if (user?.isPrivate) {
+      if (isFollowing || hasFollowRequest) return 'outline';
+      return 'default';
+    }
+    
+    // For public accounts
+    if (isFollowing) return 'outline';
     return 'default';
   };
 
