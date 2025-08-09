@@ -25,7 +25,7 @@ export const useUserProfileData = (userId: string | undefined) => {
 
   const isOwnProfile = userId === currentUser?.uid;
 
-  // Subscribe to follow status with real-time updates and better error handling
+  // Subscribe to follow status with real-time updates
   useEffect(() => {
     if (currentUser && userId && !isOwnProfile) {
       console.log('Setting up follow status subscription for:', currentUser.uid, 'and', userId);
@@ -35,7 +35,7 @@ export const useUserProfileData = (userId: string | undefined) => {
         console.log('Follow status updated:', status);
         setIsFollowing(status);
         setInitialLoading(false);
-        setError(null); // Clear any previous errors
+        setError(null);
       });
       
       return unsubscribe;
@@ -44,7 +44,7 @@ export const useUserProfileData = (userId: string | undefined) => {
     }
   }, [currentUser, userId, isOwnProfile]);
 
-  // Subscribe to follow request status
+  // Subscribe to follow request status with real-time updates - CRITICAL FOR PRIVATE ACCOUNTS
   useEffect(() => {
     if (currentUser && userId && !isOwnProfile) {
       console.log('Setting up follow request status subscription for:', currentUser.uid, 'and', userId);
@@ -52,11 +52,15 @@ export const useUserProfileData = (userId: string | undefined) => {
       const unsubscribe = subscribeToFollowRequestStatus(currentUser.uid, userId, (hasRequest) => {
         console.log('Follow request status updated:', hasRequest);
         setHasFollowRequest(hasRequest);
+        // Stop initial loading when we get follow request status
+        if (initialLoading) {
+          setInitialLoading(false);
+        }
       });
       
       return unsubscribe;
     }
-  }, [currentUser, userId, isOwnProfile]);
+  }, [currentUser, userId, isOwnProfile, initialLoading]);
 
   // Subscribe to blocked status
   useEffect(() => {
@@ -114,8 +118,6 @@ export const useUserProfileData = (userId: string | undefined) => {
     
     try {
       let success = false;
-      const originalIsFollowing = isFollowing;
-      const originalHasFollowRequest = hasFollowRequest;
       
       if (isFollowing || hasFollowRequest) {
         console.log('Attempting to unfollow user or cancel request...');
@@ -125,17 +127,15 @@ export const useUserProfileData = (userId: string | undefined) => {
         } else {
           console.error('Failed to unfollow user');
           setError('Failed to unfollow user. Please try again.');
-          // Don't reset state on failure - let real-time listener handle it
         }
       } else {
-        console.log('Attempting to follow user...');
+        console.log('Attempting to follow user or send request...');
         success = await followUser(currentUser.uid, userId);
         if (success) {
           console.log('Successfully followed user or sent request');
         } else {
           console.error('Failed to follow user');
           setError('Failed to follow user. Please try again.');
-          // Don't reset state on failure - let real-time listener handle it
         }
       }
 

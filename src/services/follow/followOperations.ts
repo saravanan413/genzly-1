@@ -1,3 +1,4 @@
+
 import { 
   doc, 
   writeBatch,
@@ -7,6 +8,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { sendFollowRequest, cancelFollowRequest } from '../privacy/privacyService';
+import { createFollowRequestNotification } from './followRequestNotifications';
 
 export const followUser = async (currentUserId: string, targetUserId: string) => {
   if (currentUserId === targetUserId) {
@@ -34,7 +36,14 @@ export const followUser = async (currentUserId: string, targetUserId: string) =>
     // Check if target user has private account
     if (targetUserData.isPrivate) {
       console.log('Target user has private account, sending follow request');
-      return await sendFollowRequest(currentUserId, targetUserId);
+      const success = await sendFollowRequest(currentUserId, targetUserId);
+      
+      // Create follow request notification
+      if (success) {
+        await createFollowRequestNotification(targetUserId, currentUserId);
+      }
+      
+      return success;
     }
 
     console.log('User data loaded, proceeding with follow operation');

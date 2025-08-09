@@ -102,17 +102,24 @@ const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
 
   const avatarUrl = user?.avatar || getFallbackAvatar();
 
-  // Determine follow button state
+  // Determine follow button state - FIXED FOR PRIVATE ACCOUNTS
   const getFollowButtonText = () => {
     if (loading) return 'Loading...';
     if (isFollowing) return 'Following';
-    if (hasFollowRequest) return 'Requested';
+    if (hasFollowRequest) return 'Requested'; // This should stay as 'Requested' for private accounts
     return 'Follow';
   };
 
   const getFollowButtonVariant = () => {
     if (isFollowing || hasFollowRequest) return 'outline';
     return 'default';
+  };
+
+  // Check if message button should be shown - HIDE FOR PRIVATE ACCOUNTS UNTIL FOLLOW REQUEST ACCEPTED
+  const shouldShowMessageButton = () => {
+    if (isBlocked) return false;
+    if (user?.isPrivate && !isFollowing) return false; // Hide message button for private accounts until following
+    return true;
   };
 
   return (
@@ -249,7 +256,7 @@ const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
         {/* Username */}
         <h1 className="text-xl md:text-2xl font-semibold mb-4">@{user?.username}</h1>
 
-        {/* Follow and Message Buttons */}
+        {/* Follow and Message Buttons - UPDATED FOR PRIVATE ACCOUNTS */}
         {!isOwnProfile && (
           <div className="flex space-x-3 mb-6">
             <Button 
@@ -260,15 +267,17 @@ const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
             >
               {getFollowButtonText()}
             </Button>
-            <Button 
-              variant="outline" 
-              className="px-6 py-2 rounded-full"
-              onClick={onMessageClick}
-              disabled={isBlocked}
-            >
-              <MessageCircle size={16} className="mr-2" />
-              Message
-            </Button>
+            {/* Message button - hidden for private accounts until following */}
+            {shouldShowMessageButton() && (
+              <Button 
+                variant="outline" 
+                className="px-6 py-2 rounded-full"
+                onClick={onMessageClick}
+              >
+                <MessageCircle size={16} className="mr-2" />
+                Message
+              </Button>
+            )}
           </div>
         )}
 
@@ -277,6 +286,15 @@ const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
           <div className="mb-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400">
               You have blocked this user. They cannot see your profile or send you messages.
+            </p>
+          </div>
+        )}
+
+        {/* Show private account message if follow request is pending */}
+        {user?.isPrivate && hasFollowRequest && !isFollowing && (
+          <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <p className="text-sm text-blue-600 dark:text-blue-400">
+              Follow request sent. This account is private and will review your request.
             </p>
           </div>
         )}
